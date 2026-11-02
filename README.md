@@ -16,6 +16,11 @@ Een draaiknop voor Philips Hue op de **Elecrow CrowPanel 1.28" Rotary Display**.
 
 Wijzigingen uit de Hue-app verschijnen ook op de knop. Het bolletje op het scherm toont de status: geel is verbinden, rood is een fout, groen is aan en grijs is uit.
 
+## Wat je ziet
+
+- **Wifi-symbool:** klein symbool bovenaan in het midden. Groen met streepjes voor de signaalsterkte (3 vanaf -60 dBm, 2 vanaf -70, 1 vanaf -80), donkerrood zonder wifi. Het toont alleen de wifi; de verbinding met de bridge zie je aan het bolletje.
+- **Ledring in de voet:** brandt zacht groen zolang de lampen aan zijn. Zijn de lampen uit of is er geen verbinding met de bridge, dan is de ring uit.
+
 ## Benodigdheden
 
 - ESP-IDF **v5.5.3**, bijvoorbeeld via de ESP-IDF-extensie in VS Code
@@ -43,7 +48,7 @@ De waarde van `username` is de sleutel.
 **In de terminal of via Claude Code:**
 
 ```bash
-. ~/.espressif/v5.5.3/esp-idf/export.sh
+. ~/.espressif/tools/activate_idf_v5.5.3.sh  # installatie via EIM
 ls /dev/cu.*                               # zoek de poort van het bord
 idf.py -p /dev/cu.JOUW_POORT flash monitor # afsluiten met Ctrl+]
 ```
@@ -63,8 +68,10 @@ Alle keuzes staan in `main/app_config.h`:
 | `ENCODER_COUNTS_PER_STEP` | 4 | Tellingen per voelbare klik |
 | `ENCODER_REVERSE` | 0 | Op 1 als de draairichting omgekeerd is |
 | `BACKLIGHT_PERCENT` | 60 | Helderheid van het scherm |
+| `WIFI_ICON_INTERVAL_MS` | 3000 | Zo vaak wordt de signaalsterkte opnieuw gemeten |
+| `BASE_LED_GREEN` | 10 | Helderheid van het groen in de ledring, 0 t/m 255 |
 
-De achtergrondkleur is `C_BACKGROUND` in `main/ui.c`. Gebruik `0x0d1117` voor de tint van GitHub.
+De achtergrondkleur is `C_BACKGROUND` in `main/ui.c`. Gebruik `0x0d1117` voor de tint van GitHub. Daar staan ook de kleuren van het wifi-symbool (`C_WIFI_ON`, `C_WIFI_OFF`) en de grenzen voor de streepjes (`WIFI_RSSI_1` t/m `WIFI_RSSI_3`).
 
 ## Opbouw
 
@@ -75,7 +82,8 @@ De achtergrondkleur is `C_BACKGROUND` in `main/ui.c`. Gebruik `0x0d1117` voor de
 | `main/input.c` | Ring en drukknop |
 | `main/ui.c` | Het scherm |
 | `main/display_port.c` | Schermdriver en de LVGL-taak |
-| `main/wifi.c` | Wifi |
+| `main/wifi.c` | Wifi en signaalsterkte |
+| `main/base_leds.c` | Ledring in de voet (5 WS2812-LEDs op GPIO 48) |
 | `main/hue.c` | Verzoeken naar de bridge en de eventstream |
 | `main/hue_json.c`, `main/hue_sse.c` | Antwoorden en de eventstream uitpakken |
 | `sdkconfig.defaults` | Vaste instellingen voor PSRAM, flash, TLS, wifi en lettertypes |
@@ -85,7 +93,7 @@ LVGL is niet thread-safe: een aanroep buiten de LVGL-taak moet tussen `display_l
 ## Bekende beperkingen van versie 1
 
 - **Certificaat:** de firmware controleert het certificaat van de bridge nog niet. Je Python-app doet dat ook niet (`verify=False`). De verbinding is wel versleuteld, maar een ander apparaat op je netwerk zou zich als bridge kunnen voordoen en zo de sleutel kunnen zien.
-- **Ledring en touch:** die worden nog niet gebruikt.
+- **Touch:** wordt nog niet gebruikt.
 - **Instellingen:** wifi en sleutel staan vast in de firmware.
 
 ## Problemen oplossen
@@ -93,6 +101,7 @@ LVGL is niet thread-safe: een aanroep buiten de LVGL-taak moet tussen `display_l
 | Op het scherm | Betekenis | Oplossing |
 |---|---|---|
 | Geel, `verbinden...` | Nog geen wifi of eerste contact | Controleer `WIFI_SSID` en `WIFI_PASSWORD`, en dat het netwerk 2,4 GHz is |
+| Wifi-symbool donkerrood | Geen wifi | Controleer `WIFI_SSID` en `WIFI_PASSWORD`, en dat het netwerk 2,4 GHz is |
 | Rood, `bridge onbereikbaar` | Geen verbinding met de bridge | Controleer `HUE_BRIDGE_IP` en of het wifinetwerk de bridge kan bereiken |
 | Rood, `sleutel geweigerd` | De sleutel klopt niet | Controleer `HUE_APP_KEY` |
 | Rood, `zone niet gevonden` | Naam komt niet voor op de bridge | Controleer `HUE_ZONE_NAME`; hoofdletters tellen mee |

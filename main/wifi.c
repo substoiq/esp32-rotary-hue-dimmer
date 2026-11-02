@@ -61,3 +61,16 @@ void wifi_wait_connected(void)
 {
     xEventGroupWaitBits(s_flags, BIT_CONNECTED, pdFALSE, pdTRUE, portMAX_DELAY);
 }
+
+bool wifi_get_rssi(int *rssi)
+{
+    if (!(xEventGroupGetBits(s_flags) & BIT_CONNECTED)) {
+        return false;
+    }
+    wifi_ap_record_t ap;
+    if (esp_wifi_sta_get_ap_info(&ap) != ESP_OK) {
+        return false;
+    }
+    *rssi = ap.rssi;
+    return true;
+}

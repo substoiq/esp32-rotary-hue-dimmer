@@ -21,5 +21,8 @@
 #define ENCODER_REVERSE      0    /* op 1 zetten als de draairichting omgekeerd is */
 #define BACKLIGHT_PERCENT    60
 
+/* Scherm */
+#define WIFI_ICON_INTERVAL_MS 3000 /* zo vaak wordt de signaalsterkte opnieuw gemeten */
+
 /* Ledring in de voet */
 #define BASE_LED_GREEN       10  /* helderheid van het groen, 0 t/m 255 */
