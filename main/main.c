@@ -49,6 +49,7 @@ void app_main(void)
     hue_start(events);
 
     int64_t last_local_ms = 0;
+    int64_t last_wifi_ms = -WIFI_ICON_INTERVAL_MS;   /* meteen bij de eerste ronde bijwerken */
 
     for (;;) {
         int steps;
@@ -85,6 +86,15 @@ void app_main(void)
                                     event.light.has_brightness, event.light.brightness);
             }
             refresh_screen();
+        }
+
+        if (now_ms - last_wifi_ms >= WIFI_ICON_INTERVAL_MS) {
+            last_wifi_ms = now_ms;
+            int rssi = 0;
+            bool wifi_ok = wifi_get_rssi(&rssi);
+            display_lock();
+            ui_update_wifi(wifi_ok, rssi);
+            display_unlock();
         }
 
         vTaskDelay(pdMS_TO_TICKS(10));

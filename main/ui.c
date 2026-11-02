@@ -1,6 +1,7 @@
 /*
  * ui.c: het scherm in GitHub-stijl, met puur zwarte achtergrond.
  *
+ *               ((·))         wifi-symbool
  *            studeerzone
  *      /                   \
  *     |        30%          |     streepjes lopen over 270 graden,
@@ -24,6 +25,16 @@
 #define C_SUCCESS     0x3fb950
 #define C_ATTENTION   0xd29922
 #define C_DANGER      0xf85149
+#define C_WIFI_ON     0x238636  /* gedempt groen */
+#define C_WIFI_OFF    0x8e1519  /* donkerrood */
+
+/* Wifi-symbool: een stip met drie boogjes eromheen */
+#define WIFI_BARS     3
+#define WIFI_Y        -62       /* midden van de stip, ten opzichte van het schermmidden */
+#define WIFI_RADIUS_1 5         /* straal van het kleinste boogje, de volgende steeds +4 */
+#define WIFI_RSSI_3   -60       /* dBm vanaf waar 3, 2 of 1 streepje oplicht */
+#define WIFI_RSSI_2   -70
+#define WIFI_RSSI_1   -80
 
 /* Schaal */
 #define TICK_COUNT    61
@@ -44,6 +55,8 @@ static lv_point_precise_t s_points[TICK_COUNT][2];
 static lv_color_t s_tick_color[TICK_COUNT];
 static int s_lit_count = -1;
 static lv_obj_t *s_percent, *s_dot, *s_status;
+static lv_obj_t *s_wifi_dot, *s_wifi_bars[WIFI_BARS];
+static int s_wifi_shown = -2;   /* -1 = geen verbinding, anders 0 t/m 3 streepjes */
 
 static lv_color_t gradient_color(float t)
 {
@@ -86,6 +99,32 @@ static void create_ticks(lv_obj_t *screen)
     }
 }
 
+static void create_wifi(lv_obj_t *screen)
+{
+    s_wifi_dot = lv_obj_create(screen);
+    lv_obj_remove_style_all(s_wifi_dot);
+    lv_obj_set_size(s_wifi_dot, 4, 4);
+    lv_obj_set_style_radius(s_wifi_dot, LV_RADIUS_CIRCLE, 0);
+    lv_obj_set_style_bg_opa(s_wifi_dot, LV_OPA_COVER, 0);
+    lv_obj_align(s_wifi_dot, LV_ALIGN_CENTER, 0, WIFI_Y);
+
+    /* Elk boogje is een lv_arc met hetzelfde middelpunt als de stip.
+     * Alleen het achtergronddeel (LV_PART_MAIN) is zichtbaar, van 225 tot 315 graden:
+     * het kwart boven het middelpunt. */
+    for (int i = 0; i < WIFI_BARS; i++) {
+        int radius = WIFI_RADIUS_1 + 4 * i;
+        lv_obj_t *arc = lv_arc_create(screen);
+        lv_obj_remove_style_all(arc);
+        lv_obj_remove_flag(arc, LV_OBJ_FLAG_CLICKABLE);
+        lv_obj_set_size(arc, 2 * radius, 2 * radius);
+        lv_obj_align(arc, LV_ALIGN_CENTER, 0, WIFI_Y);
+        lv_arc_set_bg_angles(arc, 225, 315);
+        lv_obj_set_style_arc_width(arc, 2, LV_PART_MAIN);
+        lv_obj_set_style_arc_rounded(arc, true, LV_PART_MAIN);
+        s_wifi_bars[i] = arc;
+    }
+}
+
 static lv_obj_t *create_label(lv_obj_t *parent, const lv_font_t *font, uint32_t color, const char *text)
 {
     lv_obj_t *label = lv_label_create(parent);
@@ -112,6 +151,7 @@ void ui_create(void)
     lv_obj_set_style_border_color(ring, lv_color_hex(C_BORDER), 0);
 
     create_ticks(screen);
+    create_wifi(screen);
 
     lv_obj_t *room = create_label(screen, &lv_font_montserrat_14, C_FG_MUTED, UI_ROOM_LABEL);
     lv_obj_align(room, LV_ALIGN_CENTER, 0, -44);
@@ -143,6 +183,27 @@ void ui_create(void)
     dimmer_state_t start;
     dimmer_init(&start);
     ui_update(&start, false, NULL);
+    ui_update_wifi(false, 0);
+}
+
+void ui_update_wifi(bool connected, int rssi)
+{
+    int bars = -1;
+    if (connected) {
+        bars = (rssi >= WIFI_RSSI_3) ? 3 : (rssi >= WIFI_RSSI_2) ? 2 : (rssi >= WIFI_RSSI_1) ? 1 : 0;
+    }
+    if (bars == s_wifi_shown) {
+        return;
+    }
+    s_wifi_shown = bars;
+
+    lv_color_t main = lv_color_hex(connected ? C_WIFI_ON : C_WIFI_OFF);
+    lv_obj_set_style_bg_color(s_wifi_dot, main, 0);
+    for (int i = 0; i < WIFI_BARS; i++) {
+        /* Zonder verbinding is het hele symbool rood; anders licht een boogje op als het signaal sterk genoeg is. */
+        bool lit = !connected || i < bars;
+        lv_obj_set_style_arc_color(s_wifi_bars[i], lit ? main : lv_color_hex(C_BORDER), LV_PART_MAIN);
+    }
 }
 
 static void update_ticks(int lit_count)
