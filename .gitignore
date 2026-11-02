@@ -5,3 +5,4 @@ sdkconfig.old
 .DS_Store
 # Bevat je wifi-wachtwoord en Hue-sleutel: nooit committen
 main/credentials.h
+.cache/
