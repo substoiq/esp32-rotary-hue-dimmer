@@ -6,6 +6,7 @@
  *   bridge        -> stand aanpassen -> scherm bijwerken
  */
 #include "app_config.h"
+#include "base_leds.h"
 #include "dimmer.h"
 #include "display_port.h"
 #include "esp_timer.h"
@@ -26,6 +27,9 @@ static void refresh_screen(void)
     display_lock();
     ui_update(&s_state, s_connected, s_error);
     display_unlock();
+
+    /* Zonder verbinding kennen we de stand niet, dan blijft de ring uit. */
+    base_leds_show(s_connected && s_state.on);
 }
 
 void app_main(void)
@@ -38,6 +42,7 @@ void app_main(void)
     display_unlock();
 
     input_start();
+    base_leds_start();
     wifi_start();
 
     QueueHandle_t events = xQueueCreate(16, sizeof(hue_event_t));
