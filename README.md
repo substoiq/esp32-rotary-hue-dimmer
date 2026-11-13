@@ -1,6 +1,6 @@
 # esp32-rotary-hue-dimmer
 
-A rotary dimmer for Philips Hue on the **Elecrow CrowPanel 1.28" Rotary Display**. The knob controls the `StudeerZone` directly through the Hue Bridge. Written in C with ESP-IDF and LVGL 9.
+A rotary dimmer for Philips Hue on the **Elecrow CrowPanel 1.28" Rotary Display**. The knob controls one Hue zone or room directly through the Hue Bridge; by default the zone called `StudeerZone`. Written in C with ESP-IDF and LVGL 9.
 
 ![Screens](docs/preview.png)
 
@@ -38,10 +38,10 @@ Copy `main/credentials.example.h` to `main/credentials.h` and fill in your detai
 To create a key, press the button on the bridge and run this within 30 seconds:
 
 ```bash
-curl -sk -X POST https://172.16.100.4/api -d '{"devicetype":"hue_dimmer#esp32"}'
+curl -sk -X POST https://<bridge-ip>/api -d '{"devicetype":"hue_dimmer#esp32"}'
 ```
 
-The value of `username` is the key.
+Replace `<bridge-ip>` with the IP address of your bridge; you can find it in the Hue app under the bridge settings. The value of `username` in the response is the key.
 
 ## Build and flash
 
@@ -94,7 +94,7 @@ LVGL is not thread-safe: a call from outside the LVGL task must sit between `dis
 
 ## Known limitations of version 1
 
-- **Certificate:** the firmware does not verify the bridge's certificate yet. Your Python app doesn't do that either (`verify=False`). The connection is encrypted, but another device on your network could pose as the bridge and so see the key.
+- **Certificate:** the firmware does not verify the bridge's certificate yet. The connection is encrypted, but another device on your network could pose as the bridge and so see the key.
 - **Touch:** not used yet.
 - **Settings:** Wi-Fi and key are fixed in the firmware.
 
