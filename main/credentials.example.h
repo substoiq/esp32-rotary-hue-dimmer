@@ -5,5 +5,5 @@
 #define WIFI_SSID      "naam-van-je-wifi"    /* moet een 2,4 GHz-netwerk zijn */
 #define WIFI_PASSWORD  "wachtwoord"
 
-#define HUE_BRIDGE_IP  "172.16.100.4"
+#define HUE_BRIDGE_IP  "ip-van-je-bridge"   /* bijvoorbeeld "192.168.1.10" */
 #define HUE_APP_KEY    "sleutel-van-de-bridge"
